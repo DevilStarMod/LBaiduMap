@@ -16,7 +16,7 @@
         android:layout_width="50dp"
         android:layout_height="40dp"
         android:background="#2299ff"
-        android:text="搜索"
+        android:text="@string/btn_search"
         android:textSize="15sp"
         android:textColor="#ffffff"
         android:layout_alignParentTop="true"
@@ -32,5 +32,40 @@
    	    android:textSize="15sp"
    	    android:background="@null"
    	    />
-
+	<EditText 
+	    android:id="@+id/edt_start"
+	    android:layout_width="match_parent"
+	    android:layout_height="40dp"
+	    android:layout_toRightOf="@id/btn_swift"
+	    android:layout_below="@id/btn_back"
+	    android:hint="@string/hint_input_start"
+	    android:paddingLeft="5dp"
+	    android:background="@null"
+	    />
+	<LinearLayout 
+	    android:id="@+id/line"
+	    android:layout_width="match_parent"
+	    android:layout_height="0.1dp"
+	    android:orientation="vertical"
+	    android:layout_toRightOf="@id/btn_swift"
+	    android:layout_below="@id/edt_start"
+	    android:layout_marginRight="8dp"
+	    android:background="#aaaaaa"
+	    ></LinearLayout>
+	<EditText 
+	    android:id="@+id/edt_end"
+	    android:layout_width="match_parent"
+	    android:layout_height="40dp"
+	    android:layout_toRightOf="@id/btn_swift"
+	    android:layout_below="@id/edt_start"
+	    android:hint="@string/hint_input_end"
+	    android:paddingLeft="5dp"
+	    android:background="@null"
+	    />
+	<ListView 
+	    android:id="@+id/listview_search_result"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_below="@id/edt_end"
+	    />
 </RelativeLayout>
