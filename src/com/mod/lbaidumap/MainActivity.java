@@ -1,10 +1,16 @@
 package com.mod.lbaidumap;
 
+import java.util.List;
+
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,7 +19,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
@@ -21,8 +26,6 @@ import com.baidu.location.LocationClientOption;
 import com.baidu.location.LocationClientOption.LocationMode;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
-import com.baidu.mapapi.map.BitmapDescriptor;
-import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
@@ -30,7 +33,6 @@ import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.UiSettings;
 import com.baidu.mapapi.model.LatLng;
-import com.baidu.mapapi.overlayutil.DrivingRouteOverlay;
 import com.baidu.mapapi.overlayutil.OverlayManager;
 import com.baidu.mapapi.overlayutil.WalkingRouteOverlay;
 import com.baidu.mapapi.search.core.RouteLine;
@@ -57,7 +59,9 @@ public class MainActivity extends Activity implements
 	private RoutePlanSearch mSearch;
 	private RouteLine route;
 	private OverlayManager routeOverlay;
-
+	private SensorManager mSensorManager;
+	private float deviceDirection = 0;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -68,6 +72,8 @@ public class MainActivity extends Activity implements
 	}
 
 	private void init() {
+		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		
 		edtStart = (EditText) findViewById(R.id.edt_start);
 		edtEnd = (EditText) findViewById(R.id.edt_end);
 		btnSearch = (Button) findViewById(R.id.btn_search);
@@ -98,17 +104,21 @@ public class MainActivity extends Activity implements
 				if (location == null || mMapView == null) {
 					return;
 				}
+				
 				MyLocationData locData = new MyLocationData.Builder()
 						.accuracy(location.getRadius())
 						// 设置获取到的方向，顺时针0-360
-						.direction(100).latitude(location.getLatitude())
+						.direction(deviceDirection).latitude(location.getLatitude())
 						.longitude(location.getLongitude()).build();
+				
+				edtStart.setText(location.getAddrStr());
 				mBaiduMap.setMyLocationData(locData);
 				if (isFirstLoc) {
 					isFirstLoc = false;
 					LatLng ll = new LatLng(location.getLatitude(), location
 							.getLongitude());
 					MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
+					
 					mBaiduMap.animateMapStatus(u);
 				}
 			}
@@ -118,11 +128,14 @@ public class MainActivity extends Activity implements
 				.setMyLocationConfigeration(new MyLocationConfiguration(
 						com.baidu.mapapi.map.MyLocationConfiguration.LocationMode.NORMAL,
 						true, null));
+		
 		LocationClientOption option = new LocationClientOption();
 		option.setOpenGps(true);
 		option.setLocationMode(LocationMode.Hight_Accuracy);
 		option.setCoorType("bd09ll");
 		option.setScanSpan(1000);
+		option.setNeedDeviceDirect(true);
+		option.setIsNeedAddress(true);
 		mLocClient.setLocOption(option);
 		mLocClient.start();
 	}
@@ -163,6 +176,19 @@ public class MainActivity extends Activity implements
 
 	@Override
 	protected void onResume() {
+		mSensorManager.registerListener(new SensorEventListener() {
+			
+			@Override
+			public void onSensorChanged(SensorEvent event) {
+				deviceDirection = event.values[0];
+			}
+			
+			@Override
+			public void onAccuracyChanged(Sensor sensor, int accuracy) {
+				// TODO Auto-generated method stub
+				
+			}
+		}, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_NORMAL);
 		mMapView.onResume();
 		super.onResume();
 	}
@@ -199,10 +225,12 @@ public class MainActivity extends Activity implements
 	public void onGetWalkingRouteResult(WalkingRouteResult result) {
 		 if (result == null || result.error != SearchResult.ERRORNO.NO_ERROR) {
 	            Toast.makeText(this, "抱歉，未找到结果", Toast.LENGTH_SHORT).show();
+	            
 	        }
 	        if (result.error == SearchResult.ERRORNO.AMBIGUOUS_ROURE_ADDR) {
 	            //起终点或途经点地址有岐义，通过以下接口获取建议查询信息
 	            //result.getSuggestAddrInfo()
+	        	
 	            return;
 	        }
 	        if (result.error == SearchResult.ERRORNO.NO_ERROR) {
